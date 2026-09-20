@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>今日も自分に挑む</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif;background:#f4f5f7;color:#171717}
+.app{max-width:520px;margin:auto;min-height:100vh;background:#fff;display:flex;flex-direction:column}
+header{padding:28px 22px 18px;border-bottom:1px solid #eee}h1{font-size:24px;margin:0 0 5px}header p{margin:0;color:#777;font-size:13px}
+main{padding:26px 22px;flex:1}.progress{font-size:13px;color:#777;margin-bottom:12px}.bar{height:5px;background:#eee;border-radius:10px;overflow:hidden;margin-bottom:30px}.fill{height:100%;background:#171717;width:20%;transition:.25s}
+h2{font-size:25px;margin:0 0 10px}.question{color:#666;margin-bottom:22px}.hint{font-size:12px;color:#999;margin-top:-12px;margin-bottom:14px}
+textarea,input{width:100%;border:1px solid #ddd;border-radius:12px;padding:15px;font-size:16px;outline:none;background:#fafafa}textarea{min-height:130px;resize:vertical}input{height:54px}
+textarea:focus,input:focus{border-color:#777;background:#fff}
+.actions{display:flex;gap:10px;margin-top:24px}.btn{border:0;border-radius:12px;padding:15px;font-size:16px;cursor:pointer}.next{background:#171717;color:white;flex:1}.back{background:#eee;color:#333;width:90px}.hidden{display:none}
+.result{text-align:center;padding-top:10px}.result .big{font-size:34px;font-weight:800;margin:18px 0}.quote{font-size:19px;line-height:1.7;font-weight:700;margin:28px 0}.card{text-align:left;background:#f7f7f7;border-radius:14px;padding:16px;margin-top:16px}.card b{display:block;margin-bottom:7px}.reset{margin-top:22px;width:100%;background:#eee}
+footer{padding:18px 22px 28px;color:#aaa;font-size:11px;text-align:center}
+.history{padding:0 22px 28px;border-top:1px solid #eee;background:#fff}.history-head{display:flex;justify-content:space-between;align-items:center;padding-top:22px}.history h2{font-size:21px;margin:3px 0 16px}.history-label{font-size:11px;color:#999;letter-spacing:1px}.small-btn{border:0;background:#eee;border-radius:9px;padding:8px 11px;font-size:12px}.log{border:1px solid #eee;border-radius:13px;padding:14px;margin-bottom:10px}.log-date{font-size:12px;color:#777;margin-bottom:8px}.log-challenge{font-weight:700;margin-bottom:5px}.log-target{font-size:13px;color:#666}.empty{font-size:13px;color:#999;padding:8px 0 18px}
+</style>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#171717">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="今日も自分に挑む">
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
+}
+</script>
+</head>
+<body>
+<div class="app">
+<header><h1>今日も自分に挑む。</h1><p>5分セルフコーチング</p></header>
+<main>
+<div id="coach">
+  <div class="progress">STEP <span id="step">1</span> / 5</div>
+  <div class="bar"><div class="fill" id="fill"></div></div>
+  <h2 id="title"></h2><div class="question" id="question"></div><div class="hint" id="hint"></div>
+  <textarea id="answer" placeholder="ここに書いてください"></textarea>
+  <div class="actions"><button class="btn back" id="back" onclick="prev()">戻る</button><button class="btn next" id="next" onclick="next()">次へ</button></div>
+</div>
+<div id="result" class="result hidden">
+  <div class="progress">TODAY'S CHALLENGE</div>
+  <div class="big">今日も自分に挑む。</div>
+  <div class="quote">「やる気を待たない。<br>まず一歩やる。」</div>
+  <div id="summary"></div>
+  <button class="btn reset" onclick="resetApp()">もう一度やる</button>
+</div>
+<section id="history" class="history">
+  <div class="history-head">
+    <div>
+      <div class="history-label">DAILY LOG</div>
+      <h2>毎日の記録</h2>
+    </div>
+    <button class="small-btn" onclick="clearHistory()">全削除</button>
+  </div>
+  <div id="historyList"></div>
+</section>
+</main>
+<footer>自分を責めるためではなく、自分を動かすための5分。</footer>
+</div>
+<script>
+const qs=[
+ ["今の自分は？","今、どんな気分？","例：ちょっと面倒くさい。電話したくない。"],
+ ["何から逃げている？","本当は何が嫌なんだろう？","例：断られるのが嫌なのかもしれない。"],
+ ["今日、本当にやるべきことは？","今日、自分がやるべき一番大事なことは？","できるだけ具体的に。"],
+ ["今日の勝負は何件？","今日、自分でコントロールできる数字は？","例：買い手へのテレアポ30件"],
+ ["今日、どんな自分で終わりたい？","今日の終わりに「よくやった」と思える自分は？","例：逃げずに30件やり切った自分。"]
+];
+let i=0, a=["","","","",""];
+const $=id=>document.getElementById(id);
+function render(){
+ $("step").textContent=i+1;$("fill").style.width=((i+1)*20)+"%";
+ $("title").textContent=qs[i][0];$("question").textContent=qs[i][1];$("hint").textContent=qs[i][2];
+ $("answer").value=a[i];$("back").style.visibility=i===0?"hidden":"visible";$("next").textContent=i===4?"挑戦を決める":"次へ";
+}
+function next(){
+ a[i]=$("answer").value.trim();
+ if(i<4){i++;render()}else{showResult()}
+}
+function prev(){a[i]=$("answer").value.trim();if(i>0){i--;render()}}
+function showResult(){
+ $("coach").classList.add("hidden");$("result").classList.remove("hidden");
+ const labels=["今の自分","逃げているもの","今日やること","今日の勝負","今日の自分"];
+ $("summary").innerHTML=a.map((x,j)=>`<div class="card"><b>${labels[j]}</b>${htmlEscape(x||"（未入力）")}</div>`).join("");
+ localStorage.setItem("selfCoach",JSON.stringify({date:new Date().toLocaleDateString("ja-JP"),answers:a}));
+}
+function resetApp(){i=0;a=["","","","",""];$("result").classList.add("hidden");$("coach").classList.remove("hidden");render()}
+function htmlEscape(s){return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+render();
+renderHistory();
+</script>
+</body>
+</html>
