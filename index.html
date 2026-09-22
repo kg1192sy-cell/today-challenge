@@ -63,6 +63,7 @@ if ("serviceWorker" in navigator) {
 <footer>自分を責めるためではなく、自分を動かすための5分。</footer>
 </div>
 <script>
+<script>
 const qs=[
  ["今の自分は？","今、どんな気分？","例：ちょっと面倒くさい。電話したくない。"],
  ["何から逃げている？","本当は何が嫌なんだろう？","例：断られるのが嫌なのかもしれない。"],
@@ -70,28 +71,180 @@ const qs=[
  ["今日の勝負は何件？","今日、自分でコントロールできる数字は？","例：買い手へのテレアポ30件"],
  ["今日、どんな自分で終わりたい？","今日の終わりに「よくやった」と思える自分は？","例：逃げずに30件やり切った自分。"]
 ];
-let i=0, a=["","","","",""];
+
+let i=0;
+let a=["","","","",""];
+
 const $=id=>document.getElementById(id);
+
 function render(){
- $("step").textContent=i+1;$("fill").style.width=((i+1)*20)+"%";
- $("title").textContent=qs[i][0];$("question").textContent=qs[i][1];$("hint").textContent=qs[i][2];
- $("answer").value=a[i];$("back").style.visibility=i===0?"hidden":"visible";$("next").textContent=i===4?"挑戦を決める":"次へ";
+  $("step").textContent=i+1;
+  $("fill").style.width=((i+1)*20)+"%";
+  $("title").textContent=qs[i][0];
+  $("question").textContent=qs[i][1];
+  $("hint").textContent=qs[i][2];
+  $("answer").value=a[i];
+  $("back").style.visibility=i===0?"hidden":"visible";
+  $("next").textContent=i===4?"挑戦を決める":"次へ";
 }
+
 function next(){
- a[i]=$("answer").value.trim();
- if(i<4){i++;render()}else{showResult()}
+  a[i]=$("answer").value.trim();
+
+  if(i<4){
+    i++;
+    render();
+  }else{
+    showResult();
+  }
 }
-function prev(){a[i]=$("answer").value.trim();if(i>0){i--;render()}}
+
+function prev(){
+  a[i]=$("answer").value.trim();
+
+  if(i>0){
+    i--;
+    render();
+  }
+}
+
 function showResult(){
- $("coach").classList.add("hidden");$("result").classList.remove("hidden");
- const labels=["今の自分","逃げているもの","今日やること","今日の勝負","今日の自分"];
- $("summary").innerHTML=a.map((x,j)=>`<div class="card"><b>${labels[j]}</b>${htmlEscape(x||"（未入力）")}</div>`).join("");
- localStorage.setItem("selfCoach",JSON.stringify({date:new Date().toLocaleDateString("ja-JP"),answers:a}));
+  $("coach").classList.add("hidden");
+  $("result").classList.remove("hidden");
+
+  const labels=[
+    "今の自分",
+    "逃げているもの",
+    "今日やること",
+    "今日の勝負",
+    "今日の自分"
+  ];
+
+  $("summary").innerHTML=a.map((x,j)=>
+    `<div class="card">
+      <b>${labels[j]}</b>
+      ${htmlEscape(x||"（未入力）")}
+    </div>`
+  ).join("");
+
+  // 履歴を保存
+  const history=JSON.parse(
+    localStorage.getItem("selfCoachHistory") || "[]"
+  );
+
+  history.unshift({
+    date:new Date().toLocaleString("ja-JP"),
+    answers:[...a]
+  });
+
+  localStorage.setItem(
+    "selfCoachHistory",
+    JSON.stringify(history)
+  );
+
+  renderHistory();
 }
-function resetApp(){i=0;a=["","","","",""];$("result").classList.add("hidden");$("coach").classList.remove("hidden");render()}
-function htmlEscape(s){return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+
+function resetApp(){
+  i=0;
+  a=["","","","",""];
+
+  $("result").classList.add("hidden");
+  $("coach").classList.remove("hidden");
+
+  render();
+}
+
+function htmlEscape(s){
+  return s.replace(/[&<>"']/g,m=>({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#039;"
+  }[m]));
+}
+
+// 履歴を表示
+function renderHistory(){
+
+  const history=JSON.parse(
+    localStorage.getItem("selfCoachHistory") || "[]"
+  );
+
+  const list=$("historyList");
+
+  if(history.length===0){
+    list.innerHTML='<div class="empty">まだ記録がありません。</div>';
+    return;
+  }
+
+  list.innerHTML=history.map((item,index)=>{
+
+    const answers=item.answers || [];
+
+    return `
+      <div class="log">
+        <div class="log-date">${htmlEscape(item.date)}</div>
+
+        <div class="log-challenge">
+          今日やること
+        </div>
+
+        <div class="log-target">
+          ${htmlEscape(answers[2] || "（未入力）")}
+        </div>
+
+        <details style="margin-top:12px;">
+          <summary style="font-size:13px;cursor:pointer;">
+            5つの回答を見る
+          </summary>
+
+          <div style="margin-top:12px;font-size:13px;line-height:1.7;">
+
+            <p>
+              <b>今の自分</b><br>
+              ${htmlEscape(answers[0] || "（未入力）")}
+            </p>
+
+            <p>
+              <b>逃げているもの</b><br>
+              ${htmlEscape(answers[1] || "（未入力）")}
+            </p>
+
+            <p>
+              <b>今日やること</b><br>
+              ${htmlEscape(answers[2] || "（未入力）")}
+            </p>
+
+            <p>
+              <b>今日の勝負</b><br>
+              ${htmlEscape(answers[3] || "（未入力）")}
+            </p>
+
+            <p>
+              <b>今日の自分</b><br>
+              ${htmlEscape(answers[4] || "（未入力）")}
+            </p>
+
+          </div>
+        </details>
+      </div>
+    `;
+  }).join("");
+}
+
+// 履歴を全部削除
+function clearHistory(){
+
+  if(!confirm("過去の記録をすべて削除しますか？")){
+    return;
+  }
+
+  localStorage.removeItem("selfCoachHistory");
+  renderHistory();
+}
+
 render();
 renderHistory();
 </script>
-</body>
-</html>
