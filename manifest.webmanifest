@@ -2,7 +2,7 @@
   "name": "今日も自分に挑む",
   "short_name": "今日も自分に挑む",
   "description": "5分セルフコーチング。毎日の自分との約束を記録するアプリ。",
-  "start_url": "./self_coaching_app.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
